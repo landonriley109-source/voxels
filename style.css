@@ -1,0 +1,900 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #78aee8;
+  font-family: 'Trebuchet MS', 'Lucida Console', Monaco, monospace;
+}
+
+#game {
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  image-rendering: pixelated;
+}
+
+#vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 48%, rgba(0,0,0,0.24) 100%);
+  z-index: 1;
+}
+
+#crosshair {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 26px;
+  text-shadow: 0 2px 6px #000;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+}
+
+#hud {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  padding: 11px 13px;
+  color: white;
+  background: rgba(8,12,20,0.48);
+  backdrop-filter: blur(7px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  pointer-events: none;
+  user-select: none;
+  z-index: 3;
+}
+
+#tip {
+  opacity: 0.78;
+  font-size: 12px;
+}
+
+#health {
+  position: fixed;
+  left: 50%;
+  bottom: 91px;
+  transform: translateX(-50%);
+  color: #ff5b5b;
+  font-size: 24px;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 5px black;
+  z-index: 3;
+}
+
+#damageFlash {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,0,0,0);
+  pointer-events: none;
+  z-index: 4;
+  transition: background 0.35s ease-out;
+}
+
+#damageFlash.flash {
+  background: rgba(255,0,0,0.22);
+  transition: background 0.03s linear;
+}
+
+#breakWrap {
+  position: fixed;
+  left: 50%;
+  top: calc(50% + 34px);
+  width: 168px;
+  height: 9px;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.58);
+  border: 1px solid rgba(255,255,255,0.45);
+  border-radius: 999px;
+  overflow: hidden;
+  z-index: 3;
+}
+
+#breakBar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #fff, #ffd36a);
+}
+
+#hotbar {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  padding: 8px;
+  border-radius: 14px;
+  background: rgba(7,9,15,0.55);
+  border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 12px 38px rgba(0,0,0,0.4);
+  z-index: 3;
+}
+
+.slot {
+  width: 58px;
+  height: 58px;
+  border: 2px solid rgba(255,255,255,0.34);
+  background: linear-gradient(180deg, rgba(68,72,82,0.92), rgba(28,30,36,0.92));
+  color: white;
+  display: grid;
+  place-items: center;
+  position: relative;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: transform 0.08s, border 0.08s;
+}
+
+.slot.selected {
+  border: 3px solid #fff4c0;
+  box-shadow: 0 0 18px rgba(255,235,130,0.32);
+  transform: translateY(-5px) scale(1.04);
+}
+
+.slot.empty .icon {
+  opacity: 0.15;
+}
+
+.slot .num {
+  position: absolute;
+  left: 5px;
+  top: 3px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.slot .count {
+  position: absolute;
+  right: 5px;
+  bottom: 3px;
+  font-size: 13px;
+  text-shadow: 0 1px 3px black;
+}
+
+.icon {
+  width: 35px;
+  height: 35px;
+  image-rendering: pixelated;
+  border-radius: 2px;
+}
+
+#hand {
+  position: fixed;
+  right: 6.5vw;
+  bottom: 5vh;
+  width: 230px;
+  height: 230px;
+  pointer-events: none;
+  transform-origin: bottom right;
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 14px 14px rgba(0,0,0,0.38));
+  z-index: 2;
+}
+
+#arm {
+  position: absolute;
+  right: 20px;
+  bottom: 0;
+  width: 74px;
+  height: 166px;
+  border-radius: 24px;
+  background: linear-gradient(90deg, #9d6337, #e8ad75 58%, #ffc08a);
+  transform: rotate(22deg);
+  border: 3px solid rgba(0,0,0,0.22);
+}
+
+#heldBlock {
+  position: absolute;
+  right: 78px;
+  bottom: 118px;
+  width: 68px;
+  height: 68px;
+  image-rendering: pixelated;
+  transform: rotate(12deg);
+  border: 3px solid rgba(0,0,0,0.25);
+  background-size: cover;
+  z-index: 2;
+}
+
+.handSwingBuild {
+  animation: swingBuild 0.18s ease-out;
+}
+
+.handSwingBreak {
+  animation: swingBreak 0.22s ease-in-out;
+}
+
+@keyframes swingBuild {
+  0% { transform: rotate(-8deg) translateY(0); }
+  45% { transform: rotate(-24deg) translateY(28px) translateX(-16px); }
+  100% { transform: rotate(-8deg) translateY(0); }
+}
+
+@keyframes swingBreak {
+  0% { transform: rotate(-8deg) translateY(0); }
+  30% { transform: rotate(-18deg) translateY(16px); }
+  65% { transform: rotate(-28deg) translateY(36px) translateX(-20px); }
+  100% { transform: rotate(-8deg) translateY(0); }
+}
+
+.panel {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: min(820px, 92vw);
+  max-height: 84vh;
+  overflow: auto;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  background: rgba(14,17,25,0.96);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.20);
+  border-radius: 18px;
+  z-index: 12;
+  box-shadow: 0 16px 55px rgba(0,0,0,0.55);
+}
+
+.panel h2 {
+  margin: 0 0 6px 0;
+}
+
+.panel h3 {
+  margin-bottom: 6px;
+}
+
+.panel label {
+  display: block;
+  margin: 10px 0;
+}
+
+.panel select, .panel input, .panel button {
+  margin-left: 8px;
+}
+
+#inventoryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.invItem {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.20);
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.invItem.empty {
+  opacity: 0.45;
+}
+
+.invItem:hover {
+  background: rgba(255,255,255,0.17);
+}
+
+#controlsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.bindRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255,255,255,0.08);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.bindBtn {
+  min-width: 120px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#menu {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#menuShade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,0.10), transparent 35%),
+    linear-gradient(180deg, rgba(5,9,18,0.10), rgba(5,9,18,0.70));
+  pointer-events: none;
+}
+
+#menuCard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(700px, 92vw);
+  transform: translate(-50%, -50%);
+  padding: 30px;
+  text-align: center;
+  color: white;
+  background: rgba(9,13,22,0.58);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.19);
+  border-radius: 24px;
+  box-shadow: 0 18px 70px rgba(0,0,0,0.45);
+  pointer-events: auto;
+}
+
+#menu h1 {
+  margin: 0;
+  font-size: 64px;
+  letter-spacing: 1px;
+  text-shadow: 0 4px 18px rgba(0,0,0,0.45);
+}
+
+#menu h2 {
+  margin: 0 0 12px 0;
+  color: #ffe39d;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-size: 18px;
+}
+
+#menu p {
+  max-width: 650px;
+  margin: 10px auto;
+  line-height: 1.45;
+}
+
+#menu button, .panel button {
+  margin: 8px;
+  padding: 12px 24px;
+  font-size: 17px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: linear-gradient(180deg, #fff7d0, #d7a94a);
+  color: #241800;
+  font-weight: 700;
+}
+
+.small {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+
+#settingsTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 16px 0;
+}
+
+.tabBtn {
+  padding: 8px 12px !important;
+  margin: 0 !important;
+  border-radius: 8px !important;
+  background: rgba(255,255,255,0.12) !important;
+  color: white !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  font-family: 'Lucida Console', Monaco, monospace;
+  font-size: 13px !important;
+}
+
+.tabBtn.active {
+  background: linear-gradient(180deg, #fff7d0, #d7a94a) !important;
+  color: #241800 !important;
+}
+
+.settingsTab {
+  display: none;
+}
+
+.settingsTab.active {
+  display: block;
+}
+
+#menu h1, #menu h2, #hud, .slot, .panel {
+  text-rendering: geometricPrecision;
+}
+
+#skyFX {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+
+#sunDisc {
+  position: absolute;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff9c8 0%, #ffd36e 45%, rgba(255,170,70,0.18) 70%, transparent 100%);
+  box-shadow: 0 0 60px rgba(255,220,120,0.75), 0 0 140px rgba(255,175,75,0.35);
+  left: 62%;
+  top: 18%;
+  transform: translate(-50%, -50%);
+}
+
+#cloudLayer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(255,255,255,0.42) 0 5%, transparent 12%),
+    radial-gradient(ellipse at 33% 13%, rgba(255,255,255,0.32) 0 4%, transparent 10%),
+    radial-gradient(ellipse at 74% 20%, rgba(255,255,255,0.36) 0 6%, transparent 13%),
+    radial-gradient(ellipse at 88% 28%, rgba(255,255,255,0.26) 0 5%, transparent 12%),
+    radial-gradient(ellipse at 52% 10%, rgba(255,255,255,0.20) 0 4%, transparent 11%);
+  filter: blur(1px);
+  opacity: 0.55;
+  animation: cloudDrift 70s linear infinite;
+}
+
+@keyframes cloudDrift {
+  from { transform: translateX(-6%); }
+  to { transform: translateX(6%); }
+}
+
+.superTabBtn.hidden {
+  display: none !important;
+}
+
+.worldPresetInfo {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.16);
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+.worldPresetInfo p {
+  margin: 6px 0;
+}
+#createWorldMenu {
+  z-index: 20;
+}
+
+#worldList {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.worldRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 10px;
+  padding: 10px;
+}
+.worldRow .worldMeta {
+  font-size: 12px;
+  opacity: 0.75;
+}
+.worldRow button {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+#createWorldName {
+  padding: 7px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+
+/* v25 Blocky UI overhaul */
+
+:root {
+  --vox-ui-dark: rgba(22, 22, 22, 0.92);
+  --vox-ui-mid: rgba(64, 64, 64, 0.92);
+  --vox-ui-light: rgba(186, 186, 186, 0.95);
+  --vox-ui-gold: #f7d56c;
+  --vox-ui-green: #7bc95f;
+}
+
+body {
+  font-family: "Lucida Console", Monaco, monospace !important;
+  image-rendering: pixelated;
+}
+
+button, select, input {
+  font-family: "Lucida Console", Monaco, monospace !important;
+}
+
+button {
+  border-radius: 0 !important;
+  border: 3px solid #111 !important;
+  background:
+    linear-gradient(180deg, #8d8d8d 0%, #676767 48%, #3f3f3f 52%, #2e2e2e 100%) !important;
+  color: #fff !important;
+  text-shadow: 2px 2px #151515 !important;
+  box-shadow:
+    inset 3px 3px rgba(255,255,255,0.28),
+    inset -3px -3px rgba(0,0,0,0.48),
+    0 4px 0 #111 !important;
+  letter-spacing: 0.5px;
+}
+
+button:hover {
+  filter: brightness(1.18);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 3px 3px rgba(0,0,0,0.45),
+    inset -3px -3px rgba(255,255,255,0.18),
+    0 1px 0 #111 !important;
+}
+
+select, input[type="text"] {
+  border-radius: 0 !important;
+  border: 3px solid #111 !important;
+  background: #2d2d2d !important;
+  color: #fff !important;
+  box-shadow:
+    inset 3px 3px rgba(0,0,0,0.55),
+    inset -3px -3px rgba(255,255,255,0.12) !important;
+}
+
+input[type="range"] {
+  accent-color: #89cf63;
+}
+
+input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: #7bc95f;
+  image-rendering: pixelated;
+}
+
+.panel, #menuCard {
+  border-radius: 0 !important;
+  border: 5px solid #111 !important;
+  background:
+    linear-gradient(180deg, rgba(70,70,70,0.96), rgba(34,34,34,0.97)) !important;
+  box-shadow:
+    inset 5px 5px rgba(255,255,255,0.17),
+    inset -5px -5px rgba(0,0,0,0.55),
+    0 0 0 3px rgba(255,255,255,0.08),
+    0 14px 0 rgba(0,0,0,0.38) !important;
+}
+
+.panel h2, #menu h1, #menu h2 {
+  text-shadow: 3px 3px #111, 0 0 12px rgba(255,255,255,0.18) !important;
+  letter-spacing: 1px;
+}
+
+#menu h1 {
+  color: #f0f0f0 !important;
+  font-size: 72px !important;
+  transform: none !important;
+}
+
+#menu h1::first-letter {
+  color: var(--vox-ui-green);
+}
+
+#hud {
+  border-radius: 0 !important;
+  border: 3px solid #111 !important;
+  background: rgba(20,20,20,0.72) !important;
+  box-shadow:
+    inset 2px 2px rgba(255,255,255,0.12),
+    inset -2px -2px rgba(0,0,0,0.5) !important;
+  color: #f6f6f6 !important;
+  text-shadow: 2px 2px #000 !important;
+}
+
+#tip {
+  border-radius: 0 !important;
+  border: 3px solid #111 !important;
+  background: rgba(30,30,30,0.78) !important;
+  text-shadow: 2px 2px #000 !important;
+}
+
+#health {
+  font-family: "Lucida Console", Monaco, monospace !important;
+  color: #ff4e4e !important;
+  text-shadow: 2px 2px #3c0000, 0 0 8px rgba(255,0,0,0.4) !important;
+  background: rgba(0,0,0,0.22);
+  border: 2px solid rgba(0,0,0,0.55);
+  padding: 4px 8px;
+}
+
+#hotbar {
+  background: rgba(0,0,0,0.32);
+  border: 4px solid #111;
+  padding: 5px;
+  box-shadow:
+    inset 3px 3px rgba(255,255,255,0.14),
+    inset -3px -3px rgba(0,0,0,0.5);
+}
+
+.slot {
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 0 !important;
+  border: 3px solid #171717 !important;
+  background:
+    linear-gradient(180deg, #777, #424242) !important;
+  box-shadow:
+    inset 3px 3px rgba(255,255,255,0.20),
+    inset -3px -3px rgba(0,0,0,0.52) !important;
+}
+
+.slot.selected {
+  border-color: #fff6a8 !important;
+  outline: 3px solid #2b2b2b !important;
+  background:
+    linear-gradient(180deg, #b3b3b3, #646464) !important;
+  box-shadow:
+    inset 3px 3px rgba(255,255,255,0.34),
+    inset -3px -3px rgba(0,0,0,0.55),
+    0 0 12px rgba(255,230,120,0.42) !important;
+}
+
+.slot .blockIcon, .blockIcon, #heldBlock {
+  border-radius: 0 !important;
+  border: 2px solid rgba(0,0,0,0.45) !important;
+  image-rendering: pixelated;
+  box-shadow:
+    inset 2px 2px rgba(255,255,255,0.18),
+    inset -2px -2px rgba(0,0,0,0.38) !important;
+}
+
+.slot .count {
+  font-size: 11px !important;
+  color: #fff !important;
+  text-shadow: 2px 2px #000 !important;
+}
+
+#inventory {
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0 8px, rgba(0,0,0,0.025) 8px 16px),
+    linear-gradient(180deg, rgba(70,70,70,0.97), rgba(32,32,32,0.98)) !important;
+}
+
+#inventoryGrid, .grid, #controlsGrid {
+  gap: 8px !important;
+}
+
+.invSlot, .inventorySlot, #inventoryGrid > div {
+  border-radius: 0 !important;
+  border: 3px solid #151515 !important;
+  background: linear-gradient(180deg, #707070, #3b3b3b) !important;
+  box-shadow:
+    inset 3px 3px rgba(255,255,255,0.18),
+    inset -3px -3px rgba(0,0,0,0.5) !important;
+}
+
+#settingsTabs {
+  border: 3px solid #111;
+  padding: 6px;
+  background: rgba(0,0,0,0.25);
+}
+
+.tabBtn {
+  border-radius: 0 !important;
+  border: 3px solid #111 !important;
+  background: linear-gradient(180deg, #686868, #333) !important;
+  box-shadow:
+    inset 2px 2px rgba(255,255,255,0.16),
+    inset -2px -2px rgba(0,0,0,0.45) !important;
+}
+
+.tabBtn.active {
+  background: linear-gradient(180deg, #e9d37a, #9d7b2a) !important;
+  color: #1e1600 !important;
+  text-shadow: 1px 1px rgba(255,255,255,0.35) !important;
+}
+
+.worldRow {
+  border-radius: 0 !important;
+  border: 3px solid #111 !important;
+  background: linear-gradient(180deg, rgba(82,82,82,0.95), rgba(38,38,38,0.95)) !important;
+  box-shadow:
+    inset 3px 3px rgba(255,255,255,0.14),
+    inset -3px -3px rgba(0,0,0,0.45) !important;
+}
+
+#crosshair {
+  filter: drop-shadow(2px 2px 0 #000);
+}
+
+#breakWrap {
+  border-radius: 0 !important;
+  border: 3px solid #111 !important;
+  background: #1c1c1c !important;
+}
+
+#breakBar {
+  background: linear-gradient(90deg, #72d15c, #d9f27a) !important;
+  box-shadow: inset 2px 2px rgba(255,255,255,0.35);
+}
+
+#damageFlash {
+  image-rendering: pixelated;
+}
+
+.small {
+  color: #d8d8d8 !important;
+  text-shadow: 1px 1px #000;
+}
+
+
+/* v29 Motion Blur */
+#motionBlurLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition: opacity 120ms linear, backdrop-filter 90ms linear;
+}
+
+#motionBlurLayer.active {
+  opacity: 1;
+}
+
+
+/* Delete Data button */
+.dangerBtn {
+  background: linear-gradient(180deg, #a54848, #5c1717) !important;
+  color: #fff !important;
+  border-color: #210000 !important;
+}
+.dangerBtn:hover {
+  filter: brightness(1.22);
+}
+
+
+/* v33 screen filters */
+#screenFilterLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+#screenFilterLayer.vivid {
+  opacity: 1;
+  backdrop-filter: saturate(1.55) contrast(1.12) brightness(1.04);
+  -webkit-backdrop-filter: saturate(1.55) contrast(1.12) brightness(1.04);
+}
+#screenFilterLayer.grayscale {
+  opacity: 1;
+  backdrop-filter: grayscale(1) contrast(1.05);
+  -webkit-backdrop-filter: grayscale(1) contrast(1.05);
+}
+#screenFilterLayer.sunglasses {
+  opacity: 1;
+  background: rgba(67,45,18,0.22);
+  backdrop-filter: brightness(0.78) sepia(0.28) contrast(1.06);
+  -webkit-backdrop-filter: brightness(0.78) sepia(0.28) contrast(1.06);
+}
+
+
+/* v35 Profile and UI styles */
+#profilePreview, #menuProfileBadge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  border: 3px solid rgba(0,0,0,0.45);
+  background: rgba(255,255,255,0.08);
+}
+
+#menuProfileBadge {
+  justify-content: center;
+  display: inline-flex;
+  margin: 8px auto 14px auto;
+}
+
+#profileAvatar, #menuProfileIcon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #111;
+  background: #5fb84a;
+  color: white;
+  text-shadow: 2px 2px #000;
+  font-size: 24px;
+  box-shadow: inset 3px 3px rgba(255,255,255,0.20), inset -3px -3px rgba(0,0,0,0.35);
+}
+
+body.ui-classic .panel {}
+
+body.ui-blocky .panel, body.ui-blocky #menuCard {
+  border-radius: 0 !important;
+  border-width: 6px !important;
+  box-shadow: inset 6px 6px rgba(255,255,255,0.18), inset -6px -6px rgba(0,0,0,0.55), 0 12px 0 rgba(0,0,0,0.38) !important;
+}
+
+body.ui-blocky button {
+  border-radius: 0 !important;
+  border-width: 4px !important;
+}
+
+body.ui-minecrafty .panel, body.ui-minecrafty #menuCard {
+  border-radius: 0 !important;
+  background: linear-gradient(180deg, rgba(95,95,95,0.98), rgba(43,43,43,0.98)) !important;
+  border: 4px solid #111 !important;
+  color: #f4f4f4;
+}
+
+body.ui-minecrafty button {
+  background: linear-gradient(180deg, #8b8b8b, #454545) !important;
+  border: 3px solid #111 !important;
+  text-shadow: 2px 2px #000 !important;
+}
+
+body.ui-transparent .panel, body.ui-transparent #menuCard, body.ui-transparent #hud, body.ui-transparent #hotbar {
+  background: rgba(10,10,10,0.38) !important;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+body.ui-liquid .panel, body.ui-liquid #menuCard, body.ui-liquid #hud, body.ui-liquid #hotbar {
+  background: rgba(245, 250, 255, 0.18) !important;
+  border: 1px solid rgba(255,255,255,0.46) !important;
+  border-radius: 22px !important;
+  backdrop-filter: blur(18px) saturate(1.45);
+  -webkit-backdrop-filter: blur(18px) saturate(1.45);
+  box-shadow: 0 18px 55px rgba(0,0,0,0.28), inset 1px 1px rgba(255,255,255,0.42) !important;
+}
+
+body.ui-liquid button {
+  border-radius: 16px !important;
+  border: 1px solid rgba(255,255,255,0.42) !important;
+  background: rgba(255,255,255,0.18) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+
+/* v36 custom texture pack import */
+#texturePackStatus {
+  border: 2px solid rgba(255,255,255,0.18);
+  padding: 8px;
+  background: rgba(0,0,0,0.22);
+}
+#texturePackFile {
+  max-width: 100%;
+}
+
+/* v37 custom audio upload */
+#menuAudioStatus, #worldAudioStatus {
+  border: 2px solid rgba(255,255,255,0.18);
+  padding: 8px;
+  background: rgba(0,0,0,0.22);
+}
+#customMenuAudioFile, #customWorldAudioFile {
+  max-width: 100%;
+}

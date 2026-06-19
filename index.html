@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Voxels v38 Audio Quick Fix</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="screenFilterLayer"></div>
+  <div id="motionBlurLayer"></div>
+
+  <div id="vignette"></div>
+  <div id="crosshair">+</div>
+
+  <div id="hud">
+    <div><b>Voxels v38 Audio Quick Fix</b></div>
+    <div id="stats">Loading...</div>
+    <div id="tip">Mouse wheel: hotbar · R: sprint · Left Shift: crouch/descend · Esc: settings</div>
+  </div>
+
+  <div id="health"></div>
+  <div id="damageFlash"></div>
+
+  <div id="breakWrap" class="hidden">
+    <div id="breakBar"></div>
+  </div>
+
+  <div id="hotbar"></div>
+
+  <div id="hand">
+    <div id="heldBlock"></div>
+    <div id="arm"></div>
+  </div>
+
+  <div id="inventory" class="panel hidden">
+    <h2>Inventory</h2>
+    <p>Survival: break blocks to collect them. Creative: all blocks are infinite.</p>
+    <div id="inventoryGrid"></div>
+  </div>
+
+  <div id="settings" class="panel hidden">
+    <h2>Settings</h2>
+
+    <div id="settingsTabs">
+      <button class="tabBtn active" data-tab="gameplayTab">Gameplay</button>
+      <button class="tabBtn" data-tab="profileTab">Profile</button>
+      <button class="tabBtn" data-tab="videoTab">Video</button>
+      <button class="tabBtn" data-tab="textureTab">Textures</button>
+      <button class="tabBtn superTabBtn hidden" data-tab="superTab">Super</button>
+      <button class="tabBtn" data-tab="lightingTab">Lighting</button>
+      <button class="tabBtn" data-tab="audioTab">Audio</button>
+      <button class="tabBtn" data-tab="controlsTab">Controls</button>
+    </div>
+
+    
+    <div id="profileTab" class="settingsTab">
+      <h3>Profile</h3>
+
+      <label>Username
+        <input id="profileUsername" type="text" value="Player" maxlength="18" />
+      </label>
+
+      <label>Profile Picture
+        <select id="profilePicture">
+          <option value="grass" selected>Grass Block</option>
+          <option value="stone">Stone Block</option>
+          <option value="gold">Gold Block</option>
+          <option value="sun">Sun</option>
+          <option value="castle">Castle</option>
+          <option value="cross">Cross</option>
+        </select>
+      </label>
+
+      <div id="profilePreview">
+        <div id="profileAvatar">▣</div>
+        <div>
+          <b id="profilePreviewName">Player</b>
+          <p class="small">This profile is saved only on this browser/device.</p>
+        </div>
+      </div>
+
+      <h3>Menu & UI Style</h3>
+
+      <label>UI Style Preset
+        <select id="uiStylePreset">
+          <option value="classic" selected>Classic</option>
+          <option value="blocky">Extra Blocky</option>
+          <option value="minecrafty">Minecrafty</option>
+          <option value="transparent">Transparent</option>
+          <option value="liquid">Liquid Glass</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="gameplayTab" class="settingsTab active">
+      <h3>Gameplay</h3>
+      <label>Creative Mode
+        <input id="creativeToggle" type="checkbox" />
+      </label>
+      <p class="small">Creative gives infinite blocks, allows flying, and does not collect drops.</p>
+
+      <h3>Menu Panorama</h3>
+
+      <label>3D Menu Panorama
+        <input id="panoramaToggle" type="checkbox" checked />
+      </label>
+
+      <label>Menu Panorama Scene
+        <select id="panoramaPreset">
+          <option value="classic" selected>Classic</option>
+          <option value="mountains">Mountain World</option>
+          <option value="flat">Flatworld</option>
+          <option value="desert">Desert</option>
+        </select>
+      </label>
+
+      <label>Panorama Spin Speed
+        <input id="panoramaSpeed" type="range" min="0" max="200" value="100" />
+        <span id="panoramaSpeedLabel">100%</span>
+      </label>
+
+      <label>Creative Break Speed
+        <input id="creativeBreakSpeed" type="range" min="1" max="20" value="20" />
+        <span id="creativeBreakSpeedLabel">Instant</span>
+      </label>
+
+      <label>Creative Sprint Speed
+        <input id="creativeSprintSpeed" type="range" min="2" max="30" value="10" />
+        <span id="creativeSprintSpeedLabel">10x</span>
+      </label>
+
+      <label>Auto-Step Up Blocks
+        <input id="autoStepToggle" type="checkbox" checked />
+      </label>
+      <p class="small">When enabled, walking into a one-block ledge steps up automatically.</p>
+
+      <h3>Time & Sun</h3>
+
+      <label>Day/Night Cycle
+        <input id="dayCycleToggle" type="checkbox" checked />
+      </label>
+
+      <label>Show Sun In Sky
+        <input id="showSunToggle" type="checkbox" checked />
+      </label>
+      <p class="small">Turn this off to keep the day/night cycle while hiding the visible sun.</p>
+
+      <label>Time Speed
+        <input id="timeSpeed" type="range" min="0" max="400" value="100" />
+        <span id="timeSpeedLabel">100%</span>
+      </label>
+
+      <label>Set Time
+        <select id="timePreset">
+          <option value="sunrise">Sunrise</option>
+          <option value="day">Day</option>
+          <option value="noon" selected>Noon</option>
+          <option value="sunset">Sunset</option>
+          <option value="night">Night</option>
+        </select>
+      </label>
+    
+      <h3>Local Data</h3>
+      <button id="deleteDataBtn" class="dangerBtn">Delete This Copy's Data</button>
+      <p class="small">Deletes saved worlds and resets settings only on this browser/device.</p>
+</div>
+
+    <div id="videoTab" class="settingsTab">
+      <h3>Screen Filter</h3>
+      <label>Screen Filter
+        <select id="screenFilter">
+          <option value="none" selected>Classic</option>
+          <option value="vivid">Vivid</option>
+          <option value="grayscale">Grayscale</option>
+          <option value="sunglasses">Sunglasses Tint</option>
+        </select>
+      </label>
+
+      <h3>Video Settings</h3>
+      <label>Preset
+        <select id="graphicsPreset">
+          <option value="performance">Performance</option>
+          <option value="balanced" selected>Balanced</option>
+          <option value="quality">Quality</option>
+        </select>
+      </label>
+
+      <label>Super Graphics
+        <input id="superGraphicsToggle" type="checkbox" />
+      </label>
+      <p class="small">Fake RTX-style mode: stronger sky, brighter sun, richer contrast, denser atmosphere, and enhanced lighting. It is not real ray tracing.</p>
+
+      <label>Render Distance
+        <input id="renderDistance" type="range" min="24" max="50000" value="512" />
+        <span id="renderDistanceLabel">512</span>
+      </label>
+
+      <label>Resolution Scale
+        <input id="resolutionScale" type="range" min="70" max="175" value="135" />
+        <span id="resolutionScaleLabel">135%</span>
+      </label>
+
+      <label>FOV
+        <input id="fov" type="range" min="55" max="115" value="75" />
+        <span id="fovLabel">75</span>
+      </label>
+
+      <label>Motion Blur
+        <input id="motionBlurToggle" type="checkbox" />
+      </label>
+
+      <label>Motion Blur Strength
+        <input id="motionBlurStrength" type="range" min="10" max="100" value="45" />
+        <span id="motionBlurStrengthLabel">45%</span>
+      </label>
+
+      <label>Vignette
+        <input id="vignetteToggle" type="checkbox" checked />
+      </label>
+    </div>
+
+    <div id="textureTab" class="settingsTab">
+      <h3>Texture Settings</h3>
+
+      <label>Texture Pack
+        <select id="texturePack">
+          <option value="voxels" selected>Voxels Default</option>
+          <option value="crafty">Crafty Blocks</option>
+          <option value="smooth">Smooth Plastic</option>
+          <option value="medieval">Medieval Stones</option>
+          <option value="neon">Neon Arcade</option>
+          <option value="custom">Imported Custom Pack</option>
+        </select>
+      </label>
+
+      <h3>Custom Texture Pack Import</h3>
+      <p class="small">Upload a ZIP texture pack or individual PNG files. Missing block textures keep the current/default texture.</p>
+
+      <label>Import Texture Pack
+        <input id="texturePackFile" type="file" accept=".zip,.png,image/png" multiple />
+      </label>
+
+      <button id="applyTexturePackBtn">Apply Imported Pack</button>
+      <button id="resetTexturePackBtn">Reset Custom Pack</button>
+      <p id="texturePackStatus" class="small">No custom texture pack loaded.</p>
+
+      <p class="small">Texture Pack redraws the actual block art. Texture Preset below still adjusts contrast/saturation style.</p>
+
+
+      <label>Texture Preset
+        <select id="texturePreset">
+          <option value="classic">Classic Voxels</option>
+          <option value="minecrafty" selected>Minecrafty</option>
+          <option value="soft">Soft Builder</option>
+          <option value="crisp">Crisp</option>
+          <option value="vivid">Vivid</option>
+          <option value="moody">Dark Medieval</option>
+          <option value="retro">Retro Bright</option>
+        </select>
+      </label>
+
+      <label>Texture Contrast
+        <input id="textureContrast" type="range" min="60" max="160" value="100" />
+        <span id="textureContrastLabel">100%</span>
+      </label>
+
+      <label>Texture Saturation
+        <input id="textureSaturation" type="range" min="40" max="180" value="100" />
+        <span id="textureSaturationLabel">100%</span>
+      </label>
+
+      <label>Pixel Sharpness
+        <input id="pixelSharpness" type="checkbox" checked />
+      </label>
+    </div>
+
+    <div id="superTab" class="settingsTab">
+      <h3>Super Graphics</h3>
+      <p class="small">These are stylized approximations, not hardware ray tracing. They use world-space shadow checks, shine overlays, and bloom-like brightness while staying lightweight.</p>
+
+      <label>RTX-Style Shadows
+        <input id="superShadowsToggle" type="checkbox" checked />
+      </label>
+
+      <label>Reflection Shine
+        <input id="superReflectionsToggle" type="checkbox" checked />
+      </label>
+
+      <label>Lighting Bloom
+        <input id="superBloomToggle" type="checkbox" checked />
+      </label>
+
+      <label>Super Intensity
+        <input id="superIntensity" type="range" min="50" max="200" value="120" />
+        <span id="superIntensityLabel">120%</span>
+      </label>
+    </div>
+
+    <div id="lightingTab" class="settingsTab">
+      <h3>Lighting & Sky</h3>
+
+      <label>Brightness
+        <input id="brightness" type="range" min="70" max="160" value="100" />
+        <span id="brightnessLabel">100%</span>
+      </label>
+
+      <label>Lighting Contrast
+        <input id="lightingContrast" type="range" min="60" max="150" value="100" />
+        <span id="lightingContrastLabel">100%</span>
+      </label>
+
+      <label>Ambient Light
+        <input id="ambientLight" type="range" min="60" max="150" value="100" />
+        <span id="ambientLightLabel">100%</span>
+      </label>
+
+      <label>Fog
+        <input id="fogToggle" type="checkbox" checked />
+      </label>
+
+      <label>Fog Density
+        <input id="fogDensity" type="range" min="20" max="220" value="100" />
+        <span id="fogDensityLabel">100%</span>
+      </label>
+
+      <label>Sky Warmth
+        <input id="skyWarmth" type="range" min="50" max="180" value="100" />
+        <span id="skyWarmthLabel">100%</span>
+      </label>
+
+      <label>Clouds
+        <input id="cloudToggle" type="checkbox" />
+      </label>
+
+      <label>Cloud Amount
+        <input id="cloudAmount" type="range" min="0" max="100" value="0" />
+        <span id="cloudAmountLabel">0%</span>
+      </label>
+
+      <label>Sun Glow
+        <input id="sunGlow" type="range" min="0" max="200" value="100" />
+        <span id="sunGlowLabel">100%</span>
+      </label>
+
+      <label>Distant Billboard Sun
+        <input id="sunBillboardToggle" type="checkbox" checked />
+      </label>
+      <p class="small">Keeps the sun visually far away and facing the camera, like a sky object.</p>
+
+      <label>Smooth Lighting
+        <input id="smoothToggle" type="checkbox" checked />
+      </label>
+    </div>
+
+    <div id="audioTab" class="settingsTab">
+      <h3>Audio Settings</h3>
+
+      <label>Sound Effects
+        <input id="soundToggle" type="checkbox" checked />
+      </label>
+
+      <label>Sound Volume
+        <input id="soundVolume" type="range" min="0" max="100" value="55" />
+        <span id="soundVolumeLabel">55%</span>
+      </label>
+
+      <label>Menu Music
+        <input id="menuMusicToggle" type="checkbox" checked />
+      </label>
+
+      <label>Menu Song
+        <select id="menuSongSelect">
+          <option value="calm" selected>Calm</option>
+          <option value="bright">Bright</option>
+          <option value="mystic">Mystic</option>
+          <option value="night">Night</option>
+        </select>
+      </label>
+
+      <label>Menu Music Volume
+        <input id="menuMusicVolume" type="range" min="0" max="200" value="35" />
+        <span id="menuMusicVolumeLabel">35%</span>
+      </label>
+
+      <label>World Music
+        <input id="worldMusicToggle" type="checkbox" />
+      </label>
+
+      <label>World Song
+        <select id="worldSongSelect">
+          <option value="calm" selected>Calm</option>
+          <option value="bright">Bright</option>
+          <option value="mystic">Mystic</option>
+          <option value="night">Night</option>
+        </select>
+      </label>
+
+      <label>World Music Volume
+        <input id="worldMusicVolume" type="range" min="0" max="200" value="25" />
+        <span id="worldMusicVolumeLabel">25%</span>
+      </label>
+    
+      <h3>Custom Audio Uploads</h3>
+      <p class="small">Upload audio files from your device. v38 plays them for this session without saving the whole file, so normal songs should work better.</p>
+
+      <label>Custom Menu Music File
+        <input id="customMenuAudioFile" type="file" accept="audio/*" />
+      </label>
+      <button id="applyMenuAudioBtn">Use As Menu Music</button>
+      <button id="resetMenuAudioBtn">Reset Menu Music</button>
+      <p id="menuAudioStatus" class="small">No custom menu music loaded.</p>
+
+      <label>Custom World Music File
+        <input id="customWorldAudioFile" type="file" accept="audio/*" />
+      </label>
+      <button id="applyWorldAudioBtn">Use As World Music</button>
+      <button id="resetWorldAudioBtn">Reset World Music</button>
+      <p id="worldAudioStatus" class="small">No custom world music loaded.</p>
+      <p class="small">Audio files are session-only in v38. Re-upload them after refreshing the page.</p>
+</div>
+
+    <div id="controlsTab" class="settingsTab">
+      <h3>Controls</h3>
+      <p class="small">Click a bind, then press a new key.</p>
+      <div id="controlsGrid"></div>
+    </div>
+
+    <button id="resumeBtn">Resume</button>
+    <button id="saveSettingsBtn">Save Settings</button>
+    <button id="backToMenuBtn">Back to Menu</button>
+  </div>
+
+
+  <div id="createWorldMenu" class="panel hidden">
+    <h2>Create World</h2>
+    <p>Choose how this new world should generate.</p>
+
+    <label>World Name
+      <input id="createWorldName" type="text" value="New World" maxlength="32" />
+    </label>
+
+    <label>World Type
+      <select id="createWorldPreset">
+        <option value="default" selected>Default</option>
+        <option value="flat">Flatworld</option>
+        <option value="mountains">Mountain World</option>
+        <option value="desert">Desert</option>
+      </select>
+    </label>
+
+    <div class="worldPresetInfo">
+      <p><b>Default:</b> mixed plains, forests, hills, ruins, and occasional mountains.</p>
+      <p><b>Flatworld:</b> simple flat grass world for building.</p>
+      <p><b>Mountain World:</b> tall rugged terrain and dramatic cliffs.</p>
+      <p><b>Desert:</b> sandy terrain, dry hills, and fewer trees.</p>
+    </div>
+
+    <button id="confirmCreateWorldBtn">Create</button>
+    <button id="cancelCreateWorldBtn">Cancel</button>
+  </div>
+
+
+  <div id="worldMenu" class="panel hidden">
+    <h2>Worlds</h2>
+    <p>Choose a saved world to play.</p>
+    <div id="worldList"></div>
+    <button id="refreshWorldsBtn">Refresh</button>
+    <button id="closeWorldsBtn">Back</button>
+  </div>
+
+  <div id="menu">
+    <div id="menuShade"></div>
+    <div id="menuCard">
+      <h1>Voxels</h1>
+      <h2>Version 38 Audio Quick Fix</h2>
+      <div id="menuProfileBadge"><span id="menuProfileIcon">▣</span><span id="menuProfileName">Player</span></div>
+      <p>Texture presets, screen filters, and music options.</p>
+      <button id="playBtn">Create World</button>
+      <button id="loadBtn">Load Last Save</button>
+      <button id="worldsBtn">Worlds</button>
+      <button id="menuSettingsBtn">Settings</button>
+      <p class="small">WASD move · R sprint · Left Shift crouch · left click break · right click place</p><p class="small">Windows users can launch with <b>Start_BlockLite_Windows.bat</b>.</p>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
